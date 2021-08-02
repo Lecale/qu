@@ -83,20 +83,118 @@ proc lgPlane(moves: seq[string], board: var seq[string]) : bool =
 
     return true
 
-# oops! this doesn't check for a duplicate in the row
-proc check2(moves: seq[string], board: seq[string]) : bool =
+# we can pass in the points score here
+proc check2(moves: seq[string], board: seq[string], pointsScore: var int =0) : bool =
     #play the moves
     #check 2 up for match < up + down == 4  && leftt + right = 4
-    #check ....
+    #check .... DUPLICATE
+    var thePoints: seq[seq[string]]  = @[]
+
+    #there is a problem in calculating the points score
+    #we don't want to re-add a move in the same line
+
+    #therefore thePoints has to be a list of lists
+
     for m in moves:
         var colMatch:int = 0 #colour is 0*
         var shpMatch:int = 0 #shape is 1*
+        var noDuplicates: seq[string] = @[]
+        noDuplicates.add(m)
+        var noDuplicates2: seq[string] = @[]
+        noDuplicates2.add(m)
         let x: int = parseInt(m[2 .. 3])
         let y: int = parseInt(m[4 .. 5])
         let z = (11*y) + x
-        try:
-            if board[z+1]
+        var continueLocalSearch: bool = true
+        # look to the right
+        try:            
+            for i in (x+1) .. 9:
+                if continueLocalSearch:
+                    if board[ (y*11) + i ] == "X":
+                        continueLocalSearch = false
+                    else:
+                        if board[ (y*11) + i ][0] == board[z][0]:
+                            inc colMatch
+                        if board[ (y*11) + i ][1] == board[z][1]:
+                            inc shpMatch
+                        if noDuplicates.contains(board[z][0..1]):
+                            noDuplicates.add(board[z][0..1])
+                        else:
+                            echo "violation c2 #1"
+                            return false
         except: discard
+        # look to the left
+        continueLocalSearch = true
+        try:
+            for i in countdown((x-1),0):
+                if continueLocalSearch:
+                    if board[ (y*11) + i ] == "X":
+                        continueLocalSearch = false
+                    else:
+                        if board[ (y*11) + i ][0] == board[z][0]:
+                            inc colMatch
+                        if board[ (y*11) + i ][1] == board[z][1]:
+                            inc shpMatch
+                        if noDuplicates.contains(board[z][0..1]):
+                            noDuplicates.add(board[z][0..1])
+                        else:
+                            echo "violation c2 #2"
+                            return false
+        except: discard
+        # now colour of shape must match the noDuplicates length
+        if((noDuplicates.len==shpMatch) or (noDuplicates.len == colMatch)):
+            noDuplicates.sort()
+        else:
+            echo "violation c2 #3"
+            return false
+
+        #look up
+        try:            
+            for i in (y+1) .. 9:
+                if continueLocalSearch:
+                    if board[ (i*11) + x ] == "X":
+                        continueLocalSearch = false
+                    else:
+                        if board[ (i*11) + x ][0] == board[z][0]:
+                            inc colMatch
+                        if board[ (i*11) + x ][1] == board[z][1]:
+                            inc shpMatch
+                        if noDuplicates.contains(board[z][0..1]):
+                            noDuplicates.add(board[z][0..1])
+                        else:
+                            echo "violation c2 #1"
+                            return false
+        except: discard
+        #look down
+        continueLocalSearch = true
+        try:
+            for i in countdown((y-1),0):
+                if continueLocalSearch:
+                    if board[ (i*11) + y ] == "X":
+                        continueLocalSearch = false
+                    else:
+                        if board[ (i*11) + y ][0] == board[z][0]:
+                            inc colMatch
+                        if board[ (i*11) + y ][1] == board[z][1]:
+                            inc shpMatch
+                        if noDuplicates.contains(board[z][0..1]):
+                            noDuplicates.add(board[z][0..1])
+                        else:
+                            echo "violation c2 #2"
+                            return false
+        except: discard
+        # again 
+        if((noDuplicates2.len==shpMatch) or (noDuplicates2.len == colMatch)):
+            noDuplicates2.sort()
+        else:
+            echo "violation c2 #3"
+            return false
+        
+        if thePoints.contains(noDuplicates) == false:
+            thePoints.add(noDuplicates)
+        if thePoints.contains(noDuplicates2) == false:
+            thePoints.add(noDuplicates2)
+
     return true
 
 proc joc(moves: seq[string], board: var seq[string], pScore: var int) : bool =
